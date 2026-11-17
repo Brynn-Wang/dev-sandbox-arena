@@ -1,26 +1,114 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --canvas: #f4f6ef;
+  --panel: #fffef9;
+  --panel-strong: #ffffff;
+  --ink: #17342a;
+  --muted: #66776d;
+  --line: #dce4d9;
+  --green-950: #0c3529;
+  --green-900: #123f31;
+  --green-800: #18533f;
+  --green-700: #216b50;
+  --green-100: #dceee3;
+  --green-50: #edf6ef;
+  --lime: #d9ee79;
+  --amber: #f3d38b;
+  --danger: #b65344;
+  --shadow: 0 18px 55px rgba(17, 61, 47, 0.09);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-canvas: var(--canvas);
+  --color-panel: var(--panel);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-forest: var(--green-900);
+  --color-forest-deep: var(--green-950);
+  --color-forest-soft: var(--green-100);
+  --color-lime: var(--lime);
+  --font-sans: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--canvas);
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  min-width: 320px;
+  background:
+    radial-gradient(circle at 7% 8%, rgba(217, 238, 121, 0.17), transparent 26rem),
+    var(--canvas);
+  color: var(--ink);
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: #cde5a1;
+  color: var(--green-950);
+}
+
+html[data-theme="focus"] {
+  --canvas: #eaf0e8;
+  --panel: #f8fbf4;
+  --line: #ccd9ca;
+}
+
+.grid-paper {
+  background-image:
+    linear-gradient(rgba(24, 83, 63, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(24, 83, 63, 0.045) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.soft-shadow {
+  box-shadow: var(--shadow);
+}
+
+.focus-ring {
+  outline: none;
+}
+
+.focus-ring:focus-visible {
+  box-shadow: 0 0 0 3px rgba(33, 107, 80, 0.2);
+}
+
+.thin-scrollbar {
+  scrollbar-color: #b8c9b8 transparent;
+  scrollbar-width: thin;
+}
+
+@keyframes enter-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-enter {
+  animation: enter-up 420ms ease-out both;
 }
