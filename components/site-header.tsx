@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowUpRight, Menu, X } from "lucide-react";
+import { ArrowUpRight, Menu, UserRound, X } from "lucide-react";
 import { Suspense, useState } from "react";
-import { demoWorkspaceHref } from "@/content/courses";
+import { DEFAULT_WORKSPACE_HREF } from "@/content/public-catalog";
 import { uiCopy } from "@/content/ui";
 import { usePreferencesSnapshot } from "@/lib/use-preferences";
 import { cn } from "./ui";
@@ -54,7 +54,14 @@ export function SiteHeader() {
 
         <div className="flex items-center gap-2">
           <Link
-            href={demoWorkspaceHref}
+            href="/login"
+            className="focus-ring hidden min-h-10 items-center gap-2 rounded-xl px-3 text-xs font-bold text-[var(--muted)] hover:bg-white hover:text-[var(--ink)] lg:inline-flex"
+          >
+            <UserRound className="size-3.5" />
+            {locale === "zh" ? "登录" : "Sign in"}
+          </Link>
+          <Link
+            href={DEFAULT_WORKSPACE_HREF}
             className="focus-ring hidden min-h-10 items-center gap-2 rounded-xl bg-[var(--green-900)] px-4 text-xs font-bold text-white transition hover:bg-[var(--green-950)] sm:inline-flex"
           >
             {copy.nav.openWorkspace}

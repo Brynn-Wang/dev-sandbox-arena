@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { ReportView } from "@/components/report-view";
+import { publicCourses } from "@/content/server-catalog";
 
 export const metadata: Metadata = {
   title: "学习报告",
@@ -32,7 +33,7 @@ async function ResolvedReport({
   params: Promise<{ runId: string }>;
 }) {
   const { runId } = await params;
-  return <ReportView runId={runId} />;
+  return <ReportView runId={runId} courses={publicCourses} />;
 }
 
 function ReportPageSkeleton() {

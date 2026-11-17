@@ -32,6 +32,7 @@ const StoredRunRecordSchema = z.object({
   status: z.enum(["in_progress", "completed"]),
   eventCount: z.number().int().nonnegative(),
   state: StoredStateSchema,
+  source: z.enum(["local", "remote"]).optional(),
 });
 
 const RunRecordsSchema = z.array(StoredRunRecordSchema);
@@ -52,6 +53,7 @@ function toRunRecord(state: SimulationState): RunRecord {
     status: state.phase === "complete" ? "completed" : "in_progress",
     eventCount: state.events.length,
     state,
+    source: "local",
   };
 }
 

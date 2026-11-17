@@ -10,20 +10,23 @@ import {
   Users,
 } from "lucide-react";
 import { useState } from "react";
-import type { Course } from "@/content/types";
-import { CourseConfigSchema } from "@/content/types";
+import type { PublicCourse } from "@/content/public-catalog";
 import { toolLabels } from "@/content/ui";
 import { Badge, cn } from "./ui";
 
-export function ContentManager({ courses }: { courses: Course[] }) {
+export function ContentManager({
+  courses,
+  validationPassed,
+}: {
+  courses: PublicCourse[];
+  validationPassed: boolean;
+}) {
   const [courseId, setCourseId] = useState(courses[0].id);
   const [moduleId, setModuleId] = useState(courses[0].modules[0].id);
   const course = courses.find((item) => item.id === courseId) ?? courses[0];
   const selectedModule =
     course.modules.find((item) => item.id === moduleId) ?? course.modules[0];
   const scenario = selectedModule.scenarios[0];
-  const validation = CourseConfigSchema.safeParse(courses);
-
   return (
     <div className="grid gap-5 lg:grid-cols-[18rem_minmax(0,1fr)_17rem]">
       <aside className="rounded-2xl border border-[var(--line)] bg-white p-3">
@@ -162,7 +165,7 @@ export function ContentManager({ courses }: { courses: Course[] }) {
           <CheckCircle2 className="size-5 text-[var(--green-700)]" />
           <h2 className="mt-3 text-sm font-extrabold">Zod 校验</h2>
           <p className="mt-2 text-xs leading-5 text-[var(--muted)]">
-            {validation.success
+            {validationPassed
               ? `${courses.length} 门课程、${courses.reduce(
                   (total, item) => total + item.modules.length,
                   0,

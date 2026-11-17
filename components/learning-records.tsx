@@ -11,13 +11,20 @@ import {
   Play,
   RotateCw,
 } from "lucide-react";
-import { demoWorkspaceHref, getCourse, getModule, getScenario } from "@/content/courses";
+import {
+  DEFAULT_WORKSPACE_HREF,
+  findPublicCourse,
+  findPublicModule,
+  findPublicScenario,
+  workspaceHref,
+  type PublicCourse,
+} from "@/content/public-catalog";
 import { text } from "@/content/ui";
 import { phaseLabels } from "@/lib/simulation/selectors";
 import { useRunRecords } from "@/lib/simulation/use-run-records";
 import { Badge, EmptyState } from "./ui";
 
-export function LearningRecords() {
+export function LearningRecords({ courses }: { courses: PublicCourse[] }) {
   const records = useRunRecords();
 
   if (records.length === 0) {
@@ -27,7 +34,7 @@ export function LearningRecords() {
         description="开始演示后，运行开始时间、当前阶段、完成状态和操作次数会自动保存到当前浏览器。"
         action={
           <Link
-            href={demoWorkspaceHref}
+            href={DEFAULT_WORKSPACE_HREF}
             className="focus-ring inline-flex min-h-10 items-center gap-2 rounded-xl bg-[var(--green-800)] px-4 text-sm font-bold text-white"
           >
             <Play className="size-4 fill-current" />
@@ -41,14 +48,22 @@ export function LearningRecords() {
   return (
     <div className="space-y-3">
       {records.map((record) => {
-        const scenario = getScenario(
+        const scenario = findPublicScenario(
+          courses,
           record.courseId,
           record.moduleId,
           record.scenarioId,
         );
-        const course = getCourse(record.courseId);
-        const learningModule = getModule(record.courseId, record.moduleId);
-        const workspace = `/workspace/${record.courseId}/${record.moduleId}/${record.scenarioId}`;
+        const course = findPublicCourse(courses, record.courseId);
+        const learningModule = findPublicModule(
+          courses,
+          record.courseId,
+          record.moduleId,
+        );
+        const workspace =
+          course && learningModule && scenario
+            ? workspaceHref(course, learningModule, scenario)
+            : `/workspace/${record.courseId}/${record.moduleId}/${record.scenarioId}`;
 
         return (
           <article
@@ -78,7 +93,9 @@ export function LearningRecords() {
                     <Badge tone={record.status === "completed" ? "green" : "amber"}>
                       {record.status === "completed" ? "已完成" : "进行中"}
                     </Badge>
-                    <Badge tone="neutral">DEMO</Badge>
+                    <Badge tone="neutral">
+                      {record.source === "remote" ? "CONNECTED" : "DEMO"}
+                    </Badge>
                   </div>
                   <p className="mt-1 text-xs text-[var(--muted)]">
                     {course ? text(course.title, "zh") : record.courseId} ·{" "}

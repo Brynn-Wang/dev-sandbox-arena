@@ -1,6 +1,6 @@
 # Itera Studio
 
-AI 辅助软件开发互动学习平台的 Demo-first 第一版框架。当前版本用于验证页面结构、共享工具、课程配置和一条可真实改变状态的模拟开发流程。
+AI 辅助软件开发互动学习平台。项目同时支持免登录 Demo 与 Supabase Connected 模式；核心场景已具备服务端权威状态、跨设备恢复和结构化 AI 评估。
 
 ## 技术栈
 
@@ -8,8 +8,10 @@ AI 辅助软件开发互动学习平台的 Demo-first 第一版框架。当前�
 - React 19.3.0
 - TypeScript
 - Tailwind CSS 4.3.3
+- Supabase Auth / PostgreSQL
 - Zod 4.6.7
 - Vitest 4.0.18
+- Playwright 1.65.1
 
 依赖版本记录在 `package.json` 与 `package-lock.json` 中。
 
@@ -29,6 +31,7 @@ npm run typecheck
 npm run lint
 npm test
 npm run build
+npm run test:e2e
 ```
 
 ## 页面
@@ -38,10 +41,12 @@ npm run build
 | `/` | 平台首页与演示入口 |
 | `/courses` | 课程、模块、阶段、状态与继续学习入口 |
 | `/workspace/ai-software-engineering/release-defect/guided-demo` | 核心三栏学习工作台 |
-| `/records` | 当前浏览器的学习记录 |
+| `/records` | 当前浏览器与 Connected 服务端学习记录 |
 | `/records/[runId]` | 操作事件与演示评价报告 |
 | `/settings` | 语言、主题与摘要指令偏好 |
 | `/admin/content` | 课程配置只读预览与 Zod 校验结果 |
+| `/login` | GitHub 或邮箱链接登录 |
+| `/api/health` | 运行时模式和依赖配置检查 |
 
 ## 完整演示流程
 
@@ -65,7 +70,7 @@ npm run build
 
 ## 环境变量
 
-复制 `.env.example` 为 `.env.local` 后按需配置。Demo 默认无需环境变量，不需要任何密钥。
+复制 `.env.example` 为 `.env.local` 后按需配置。`RUN_MODE=demo` 无需密钥；`RUN_MODE=connected` 需要 Supabase URL、anon key 和仅服务端使用的 service role key。
 
 真实密钥不能提交到仓库。`SUPABASE_SERVICE_ROLE_KEY` 与 `LLM_API_KEY` 仅允许在服务端读取；任何 `NEXT_PUBLIC_` 变量都可能进入浏览器包，不得存放服务端密钥。
 
@@ -74,13 +79,15 @@ npm run build
 - `DEMO_MODE=true`：确定性 Demo 响应。
 - `DEMO_MODE=false` 且配置完整：使用 OpenAI-compatible 服务端适配器读取 `LLM_BASE_URL`、`LLM_MODEL` 和 `LLM_API_KEY`。
 - 环境不完整时仍回退到 Demo 适配器，并明确返回 `adapter: "demo"`。
+- Connected 工作台的助手请求由服务端发起，返回结构化 intent、covered criteria、evidence quote 和 grader。
 
 ## 状态和持久化
 
-- 活跃运行、运行历史和偏好均保存在当前浏览器 `localStorage`。
-- 不存在演示登录，也不把本地状态描述为安全认证。
-- 学习记录和 Demo 运行不跨设备同步。
-- 工作台按钮只发送 Action；所有状态与事件由统一 reducer 修改。
+- Demo 模式把活跃运行、运行历史和偏好保存在当前浏览器 `localStorage`。
+- Connected 模式通过 Supabase Auth 验证用户，由服务端 API 执行 Action，Run 和 Event 写入 PostgreSQL。
+- 服务端状态使用 revision 乐观锁，防止多标签页静默覆盖。
+- 学生通过 RLS 只能读取自己的运行和事件；浏览器不能直接写入权威运行状态。
+- 工作台按钮只发送 Action；所有状态与事件仍由统一 reducer 修改。
 
 ## 已完成
 
@@ -88,10 +95,14 @@ npm run build
 - 可配置的课程、模块、场景、任务步骤、工具范围、文件、消息、完成条件和反馈占位。
 - 九个共享工具：任务、消息、项目说明、文件与差异、AI 助手、测试、版本、发布、摘要。
 - 完整状态化演示流程、错误反馈、事件日志与刷新恢复。
+- Demo / Connected 统一 RunStore、Supabase 登录、服务端运行与事件记录。
+- 公共 Catalog 与完整 Scenario 分离，Connected 页面不接收隐藏补丁和修复答案。
+- 结构化 AI 评估、证据引用、grader 降级与报告记录。
 - 小屏幕工具／任务标签切换。
 - Demo／Connected 数据与模型调用边界。
 - Zod 课程配置和持久化入口校验。
 - 关键 reducer 规则测试。
+- Playwright Demo 流程：完成场景、刷新恢复、查看学习报告。
 - 语言偏好已接通主导航与设置；课程标题和描述使用双语配置，详细工具课堂文案仍以中文为主。
 
 ## 模拟实现
@@ -104,12 +115,12 @@ npm run build
 
 ## 待接入
 
-- Supabase Auth、用户资料、班级与教师角色。
-- PostgreSQL 用户数据隔离、RLS 与学习记录服务端持久化。
+- 班级、任务分配与教师角色。
+- 运行历史的长期归档与教师报告。
 - Supabase Storage 文件上传、PDF/TXT 提取与对象权限。
 - 摘要任务的服务端队列、自定义指令执行和异常路径处理。
 - 正式题目、剧情、评分规则、提示分级和教师反馈。
 - 班级管理、排行榜、课程版本管理和内容编辑发布流。
-- Playwright 端到端测试与真实部署验证。
+- Connected E2E 的真实 Staging Supabase 凭据与部署烟测。
 
 更多文件职责与扩展方法见 [ARCHITECTURE.md](./ARCHITECTURE.md)。

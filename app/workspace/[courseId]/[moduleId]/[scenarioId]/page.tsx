@@ -2,7 +2,12 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { WorkspaceShell } from "@/components/workspace/workspace-shell";
-import { getCourse, getModule, getScenario } from "@/content/courses";
+import {
+  getServerCourse,
+  getServerModule,
+  getServerScenario,
+  toConnectedClientScenario,
+} from "@/content/server-catalog";
 
 type WorkspacePageProps = {
   params: Promise<{
@@ -24,17 +29,23 @@ export default function WorkspacePage({ params }: WorkspacePageProps) {
 
 async function ResolvedWorkspace({ params }: WorkspacePageProps) {
   const { courseId, moduleId, scenarioId } = await params;
-  const course = getCourse(courseId);
-  const learningModule = getModule(courseId, moduleId);
-  const scenario = getScenario(courseId, moduleId, scenarioId);
+  const course = getServerCourse(courseId);
+  const learningModule = getServerModule(courseId, moduleId);
+  const fullScenario = getServerScenario(courseId, moduleId, scenarioId);
 
-  if (!course || !learningModule || !scenario) notFound();
+  if (!course || !learningModule || !fullScenario) notFound();
+  const mode = process.env.RUN_MODE === "connected" ? "connected" : "demo";
+  const scenario =
+    mode === "connected"
+      ? toConnectedClientScenario(fullScenario)
+      : fullScenario;
 
   return (
     <WorkspaceShell
       course={course}
       module={learningModule}
       scenario={scenario}
+      mode={mode}
     />
   );
 }

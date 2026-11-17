@@ -4,7 +4,10 @@ import { ContentManager } from "@/components/content-manager";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { Badge } from "@/components/ui";
-import { courses } from "@/content/courses";
+import {
+  publicCatalogValidation,
+  publicCourses as courses,
+} from "@/content/server-catalog";
 
 export const metadata: Metadata = {
   title: "内容配置",
@@ -34,7 +37,10 @@ export default function ContentAdminPage() {
           </div>
         </div>
         <div className="mt-9">
-          <ContentManager courses={courses} />
+          <ContentManager
+            courses={courses}
+            validationPassed={publicCatalogValidation.success}
+          />
         </div>
       </main>
       <SiteFooter />

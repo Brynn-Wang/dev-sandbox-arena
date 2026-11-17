@@ -16,7 +16,7 @@ import {
 import { usePreferencesSnapshot } from "@/lib/use-preferences";
 import { Badge, Button, cn } from "./ui";
 
-export function SettingsForm() {
+export function SettingsForm({ connectedMode }: { connectedMode: boolean }) {
   const storedPreferences = usePreferencesSnapshot();
   const [draft, setDraft] = useState<Preferences | null>(null);
   const [saved, setSaved] = useState(false);
@@ -160,20 +160,26 @@ export function SettingsForm() {
 
       <aside className="space-y-4">
         <div className="rounded-2xl bg-[var(--green-950)] p-5 text-white">
-          <Badge tone="lime">DEMO DEFAULT</Badge>
+          <Badge tone="lime">
+            {connectedMode ? "CONNECTED" : "DEMO DEFAULT"}
+          </Badge>
           <h2 className="mt-4 text-lg font-extrabold">数据模式</h2>
           <p className="mt-2 text-xs leading-6 text-[#c7d8cd]">
-            当前所有学习状态保存在 localStorage。无需账号、密钥或外部服务。
+            {connectedMode
+              ? "当前运行由服务端保存，学生只能读取自己的记录，写入通过受保护 API 完成。"
+              : "当前学习状态保存在 localStorage。无需账号、密钥或外部服务。"}
           </p>
         </div>
         <div className="rounded-2xl border border-[var(--line)] bg-white p-5">
           <LockKeyhole className="size-5 text-[var(--green-700)]" />
           <h2 className="mt-3 text-sm font-extrabold">Connected 模式</h2>
           <p className="mt-2 text-xs leading-5 text-[var(--muted)]">
-            Supabase Auth、RLS、Storage 与服务端模型适配器仅保留接口边界，尚未启用。
+            {connectedMode
+              ? "Supabase Auth、RLS、服务端运行与事件记录已启用；模型失败会降级到关键词评估。"
+              : "Connected 模式已具备代码和迁移入口，但当前环境仍以 Demo 模式运行。"}
           </p>
           <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-[10px] font-semibold text-[var(--danger)]">
-            演示登录不能视为安全的正式认证。
+            正式发布前仍需在 Staging Supabase 项目验证 RLS、OAuth 回调与迁移顺序。
           </p>
         </div>
       </aside>

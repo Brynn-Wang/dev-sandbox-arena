@@ -11,7 +11,8 @@ import {
   Sparkles,
   TestTube2,
 } from "lucide-react";
-import { courses, demoWorkspaceHref } from "@/content/courses";
+import { DEFAULT_WORKSPACE_HREF } from "@/content/public-catalog";
+import { publicCourses } from "@/content/server-catalog";
 import { Badge, Card } from "@/components/ui";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -25,6 +26,7 @@ const flow = [
 ];
 
 export default function Home() {
+  const courses = publicCourses;
   const moduleCount = courses.reduce(
     (total, course) => total + course.modules.length,
     0,
@@ -62,7 +64,7 @@ export default function Home() {
                   <ArrowRight className="size-4" />
                 </Link>
                 <Link
-                  href={demoWorkspaceHref}
+                  href={DEFAULT_WORKSPACE_HREF}
                   className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-[var(--line)] bg-white px-6 text-sm font-bold text-[var(--ink)] transition hover:border-[var(--green-700)] hover:bg-[var(--green-50)]"
                 >
                   <Play className="size-4 fill-current" />
@@ -122,7 +124,7 @@ export default function Home() {
                   })}
                 </div>
                 <Link
-                  href={demoWorkspaceHref}
+                  href={DEFAULT_WORKSPACE_HREF}
                   className="focus-ring mt-4 flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[var(--lime)] text-sm font-black text-[var(--green-950)] transition hover:bg-[#cfe96d]"
                 >
                   打开示例工作台

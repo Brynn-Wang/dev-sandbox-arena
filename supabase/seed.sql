@@ -1,0 +1,1 @@
+-- Intentionally empty. Course catalog data is versioned with the application.

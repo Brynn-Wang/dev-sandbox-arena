@@ -14,7 +14,19 @@ export const demoAssistantAdapter: AssistantAdapter = {
 
     return {
       adapter: "demo" as const,
+      grader: "demo" as const,
       content: `${modeLine}\n${noteContext}\n\n用户目标：${request.prompt}`,
+      evaluation: {
+        intent:
+          request.mode === "build"
+            ? "edit"
+            : request.mode === "plan"
+              ? "plan"
+              : "answer",
+        summary: modeLine,
+        coveredCriteria: [],
+        evidenceQuotes: [request.prompt.slice(0, 500)],
+      },
     };
   },
 };

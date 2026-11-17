@@ -27,6 +27,12 @@ export interface AssistantMessage {
   mode: AssistantMode;
   content: string;
   at: string;
+  evaluation?: {
+    grader: "demo" | "model" | "keyword";
+    intent: "answer" | "plan" | "edit" | "review";
+    coveredCriteria: string[];
+    evidenceQuotes: string[];
+  };
 }
 
 export interface FileRecord {
@@ -34,8 +40,8 @@ export interface FileRecord {
   name: string;
   language: string;
   baseline: string;
-  aiContent: string;
-  fixedContent: string;
+  aiContent?: string;
+  fixedContent?: string;
   content: string;
 }
 
@@ -152,6 +158,7 @@ export interface RunRecord {
   status: "in_progress" | "completed";
   eventCount: number;
   state: SimulationState;
+  source?: "local" | "remote";
 }
 
 export interface SimulationLocation {
@@ -167,7 +174,17 @@ export type SimulationAction = ActionBase &
     | { type: "OPEN_EMAIL"; emailId: string }
     | { type: "SAVE_NOTES"; content: string }
     | { type: "SET_ASSISTANT_MODE"; mode: AssistantMode }
-    | { type: "SEND_ASSISTANT"; prompt: string }
+    | {
+        type: "SEND_ASSISTANT";
+        prompt: string;
+        response?: {
+          content: string;
+          grader: "demo" | "model" | "keyword";
+          intent: "answer" | "plan" | "edit" | "review";
+          coveredCriteria: string[];
+          evidenceQuotes: string[];
+        };
+      }
     | { type: "APPLY_AI_EDIT" }
     | { type: "RUN_TESTS" }
     | { type: "APPLY_FIX" }

@@ -181,12 +181,30 @@ export function simulationReducer(
         content: prompt,
         at,
       };
-      const assistantMessage = {
+      const assistantMessage: SimulationState["assistant"]["messages"][number] = {
         id: `${state.runId}-assistant-${state.assistant.messages.length + 2}`,
         role: "assistant" as const,
         mode,
-        content: demoAssistantReply(prompt, mode),
+        content: action.response?.content ?? demoAssistantReply(prompt, mode),
         at,
+        evaluation: action.response
+          ? {
+              grader: action.response.grader,
+              intent: action.response.intent,
+              coveredCriteria: action.response.coveredCriteria,
+              evidenceQuotes: action.response.evidenceQuotes,
+            }
+          : {
+              grader: "demo",
+              intent:
+                mode === "build"
+                  ? "edit"
+                  : mode === "plan"
+                    ? "plan"
+                    : "answer",
+              coveredCriteria: [],
+              evidenceQuotes: [prompt.slice(0, 500)],
+            },
       };
       return applyResult(
         state,
@@ -227,6 +245,9 @@ export function simulationReducer(
       if (!hasBuildMessage) {
         return reject(state, at, "请先向 Build 模式助手发送修改请求。");
       }
+      if (!primary.aiContent) {
+        return reject(state, at, "当前场景没有可应用的助手补丁。");
+      }
       if (primary.content !== primary.baseline) {
         return reject(state, at, "示例补丁已经应用。");
       }
@@ -236,7 +257,9 @@ export function simulationReducer(
         {
           phase: "building",
           files: state.files.map((file, index) =>
-            index === 0 ? { ...file, content: file.aiContent } : file,
+            index === 0
+              ? { ...file, content: file.aiContent ?? file.content }
+              : file,
           ),
           tests: {
             status: "idle",
@@ -268,7 +291,9 @@ export function simulationReducer(
       if (!primary) {
         return reject(state, at, "当前场景没有可测试文件。");
       }
-      const passed = primary.content === primary.fixedContent;
+      const passed =
+        Boolean(primary.fixedContent) &&
+        primary.content === primary.fixedContent;
       const runCount = state.tests.runCount + 1;
       return applyResult(
         state,
@@ -307,6 +332,9 @@ export function simulationReducer(
       if (!primary || state.tests.status !== "failed") {
         return reject(state, at, "请先运行测试并确认失败结果。");
       }
+      if (!primary.fixedContent) {
+        return reject(state, at, "当前场景没有可应用的演示修复。");
+      }
       if (primary.content === primary.fixedContent) {
         return reject(state, at, "修复已经应用。");
       }
@@ -315,7 +343,9 @@ export function simulationReducer(
         at,
         {
           files: state.files.map((file, index) =>
-            index === 0 ? { ...file, content: file.fixedContent } : file,
+            index === 0
+              ? { ...file, content: file.fixedContent ?? file.content }
+              : file,
           ),
           tests: {
             status: "idle",

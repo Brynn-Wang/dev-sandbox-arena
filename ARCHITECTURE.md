@@ -1,6 +1,14 @@
 # 架构说明
 
-## 三层边界
+## 运行模式
+
+- `demo`：完整状态在浏览器 reducer 中推进，快照写入 localStorage。
+- `connected`：浏览器只提交客户端 Action；服务端验证会话、计算下一页状态并写入 Supabase。
+- 两种模式共用 `SimulationState`、reducer、选择器和学习报告。
+
+入口由服务端页面读取 `RUN_MODE`。Connected 页面使用脱敏 Scenario；完整 `content/courses.ts` 只由 `server-only` 模块读取。
+
+## 四层边界
 
 ### 1. 页面与共享组件
 
@@ -8,7 +16,7 @@
 - `components/`：站点导航、课程卡片、学习记录、报告、设置和课程预览。
 - `components/workspace/`：三栏工作台、任务侧栏与共享工具面板。
 
-页面负责路由、读取静态课程配置和组合布局。工作台内部只通过 Client Component 访问浏览器状态。
+页面负责路由、读取静态课程配置和组合布局。Demo 工作台通过 Client Component 访问浏览器状态；Connected 工作台只通过受保护 Run API 读取和提交状态。
 
 ### 2. 课程内容配置
 
@@ -25,8 +33,20 @@
 - `lib/simulation/selectors.ts`：步骤完成度、阶段、发布检查等派生状态。
 - `lib/simulation/storage.ts`：localStorage 读写、运行记录去重和上限。
 - `lib/simulation/run-context.tsx`：客户端状态 Provider、刷新恢复和重新开始。
+- `lib/simulation/run-store.ts`：`LocalRunStore` 与 `ConnectedRunStore` 的统一接口。
+- `lib/simulation/actions.ts`：浏览器可提交 Action 的 Zod 白名单，禁止注入服务端 AI 结果。
 
 按钮不保存自己的完成状态。任务勾选、发布条件、PR 状态和报告内容都从 `SimulationState` 派生。
+
+### 4. 服务端数据与 AI
+
+- `lib/supabase/`：浏览器、会话感知服务端和 service-role 客户端。
+- `lib/server/runs.ts`：服务端运行读取、启动、乐观锁写入、重置和历史查询。
+- `app/api/runs/`：Connected Run API 与记录读取 API。
+- `lib/ai/evaluate-assistant.ts`：结构化模型评估与关键词降级。
+- `supabase/migrations/`：Profile、Run、Event、RLS 和原子 transition 函数。
+
+Connected 写入使用独占的 service role，但必须先通过用户会话验证，再由 API 调用 reducer 计算状态。浏览器不持有 service role key。
 
 ## 修改入口
 
@@ -59,7 +79,7 @@ Connected 方向：
 4. 模型密钥只由 `lib/ai/server-adapter.ts` 和 Route Handler 读取。
 5. 评分规则与标准答案不得作为公共课程配置直接发到浏览器。
 
-当前仓库只实现模型请求边界，没有安装或初始化 Supabase SDK，也没有伪造 Connected 登录。
+Connected 模式已经实现登录、RLS、运行持久化、事件记录和健康检查。部署前仍需按 `docs/DEPLOYMENT.md` 为 Preview、Staging 和 Production 配置独立的 Supabase 项目。
 
 ## 持久化与重新开始
 

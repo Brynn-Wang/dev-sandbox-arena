@@ -4,7 +4,7 @@ import { CourseCatalog } from "@/components/course-catalog";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { Badge } from "@/components/ui";
-import { courses } from "@/content/courses";
+import { publicCourses as courses } from "@/content/server-catalog";
 
 export const metadata: Metadata = {
   title: "课程与项目",

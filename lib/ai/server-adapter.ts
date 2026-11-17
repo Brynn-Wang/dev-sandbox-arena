@@ -1,5 +1,9 @@
 import "server-only";
-import type { AssistantAdapter, AssistantRequest } from "./contracts";
+import {
+  AssistantEvaluationSchema,
+  type AssistantAdapter,
+  type AssistantRequest,
+} from "./contracts";
 
 export function isConnectedAiConfigured(): boolean {
   return Boolean(
@@ -31,7 +35,7 @@ export const configuredAssistantAdapter: AssistantAdapter = {
           {
             role: "system",
             content:
-              "你是教学模拟中的软件工程助手。只提供可审查、可测试的建议，不声称执行了真实命令。",
+              "你是教学模拟中的软件工程助手。只提供可审查、可测试的建议，不声称执行了真实命令。必须返回 JSON，字段为 intent、summary、coveredCriteria、evidenceQuotes。evidenceQuotes 只能逐字引用用户请求或项目说明。",
           },
           {
             role: "user",
@@ -41,7 +45,7 @@ export const configuredAssistantAdapter: AssistantAdapter = {
           },
         ],
       }),
-      signal: AbortSignal.timeout(20000),
+      signal: AbortSignal.timeout(20_000),
     });
 
     if (!response.ok) {
@@ -51,9 +55,23 @@ export const configuredAssistantAdapter: AssistantAdapter = {
     const payload = (await response.json()) as {
       choices?: Array<{ message?: { content?: string } }>;
     };
-    const content = payload.choices?.[0]?.message?.content;
-    if (!content) throw new Error("Configured model returned no content.");
+    const raw = payload.choices?.[0]?.message?.content;
+    if (!raw) throw new Error("Configured model returned no content.");
 
-    return { adapter: "configured" as const, content };
+    const json = raw
+      .trim()
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/\s*```$/, "");
+    const parsed = AssistantEvaluationSchema.safeParse(JSON.parse(json));
+    if (!parsed.success) {
+      throw new Error("Configured model returned an invalid evaluation.");
+    }
+
+    return {
+      adapter: "configured" as const,
+      grader: "model" as const,
+      content: parsed.data.summary,
+      evaluation: parsed.data,
+    };
   },
 };

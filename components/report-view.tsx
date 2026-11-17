@@ -11,13 +11,22 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
-import { getScenario } from "@/content/courses";
+import {
+  findPublicScenario,
+  type PublicCourse,
+} from "@/content/public-catalog";
 import { text } from "@/content/ui";
 import { phaseLabels } from "@/lib/simulation/selectors";
 import { useRunRecord } from "@/lib/simulation/use-run-records";
 import { Badge, EmptyState, cn } from "./ui";
 
-export function ReportView({ runId }: { runId: string }) {
+export function ReportView({
+  runId,
+  courses,
+}: {
+  runId: string;
+  courses: PublicCourse[];
+}) {
   const record = useRunRecord(runId);
 
   if (!record) {
@@ -39,7 +48,8 @@ export function ReportView({ runId }: { runId: string }) {
   }
 
   const state = record.state;
-  const scenario = getScenario(
+  const scenario = findPublicScenario(
+    courses,
     record.courseId,
     record.moduleId,
     record.scenarioId,
@@ -52,6 +62,13 @@ export function ReportView({ runId }: { runId: string }) {
         60000,
     ),
   );
+  const aiGraders = [
+    ...new Set(
+      state.assistant.messages
+        .map((message) => message.evaluation?.grader)
+        .filter((value): value is "demo" | "model" | "keyword" => Boolean(value)),
+    ),
+  ];
 
   return (
     <div>
@@ -72,7 +89,7 @@ export function ReportView({ runId }: { runId: string }) {
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.16em] text-lime-200">
-              LEARNING REPORT · DEMO
+              LEARNING REPORT · {record.source === "remote" ? "CONNECTED" : "DEMO"}
             </p>
             <h1 className="mt-3 max-w-3xl text-3xl font-black tracking-[-0.04em] sm:text-4xl">
               {scenario ? text(scenario.title, "zh") : "学习运行报告"}
@@ -136,6 +153,12 @@ export function ReportView({ runId }: { runId: string }) {
                 <dt className="text-[var(--muted)]">发布状态</dt>
                 <dd className="font-semibold">
                   {state.release.status === "released" ? "已发布" : "未发布"}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-[var(--muted)]">AI 评估方式</dt>
+                <dd className="font-semibold">
+                  {aiGraders.length ? aiGraders.join(" / ") : "未调用"}
                 </dd>
               </div>
             </dl>

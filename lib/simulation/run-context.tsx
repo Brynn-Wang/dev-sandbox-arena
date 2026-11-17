@@ -6,14 +6,19 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   useSyncExternalStore,
   type ReactNode,
 } from "react";
 import type { Scenario } from "@/content/types";
 import { resetSimulation } from "./state";
-import { simulationReducer } from "./reducer";
 import { loadActiveState, persistState } from "./storage";
+import {
+  createRunStore,
+  RunStoreError,
+  type RunMode,
+} from "./run-store";
 import type {
   SimulationAction,
   SimulationLocation,
@@ -37,6 +42,9 @@ type SimulationContextValue = {
   state: SimulationState;
   dispatch: (action: SimulationAction) => void;
   resetRun: () => void;
+  pending: boolean;
+  error: string | null;
+  mode: RunMode;
 };
 
 const SimulationContext = createContext<SimulationContextValue | null>(null);
@@ -45,46 +53,124 @@ export function SimulationProvider({
   courseId,
   moduleId,
   scenario,
+  mode = "demo",
   children,
 }: {
   courseId: string;
   moduleId: string;
   scenario: Scenario;
+  mode?: RunMode;
   children: ReactNode;
 }) {
   const location = useMemo<SimulationLocation>(
     () => ({ courseId, moduleId, scenario }),
     [courseId, moduleId, scenario],
   );
-  const [state, setState] = useState<SimulationState>(
-    () => loadActiveState(scenario.id) ?? resetSimulation(location),
+  const fallback = useMemo(
+    () => resetSimulation(location),
+    [location],
   );
-  const ready = useSyncExternalStore(
+  const [state, setState] = useState<SimulationState>(
+    () => (mode === "demo" ? loadActiveState(scenario.id) : null) ?? fallback,
+  );
+  const stateRef = useRef(state);
+  const dispatchQueue = useRef(Promise.resolve());
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [connectedReady, setConnectedReady] = useState(mode === "demo");
+  const hydrated = useSyncExternalStore(
     subscribeHydration,
     getClientHydrationSnapshot,
     getServerHydrationSnapshot,
   );
+  const ready = mode === "demo" ? hydrated : connectedReady;
+  const store = useMemo(
+    () =>
+      createRunStore({
+        mode,
+        scenarioId: scenario.id,
+        location,
+        initial: fallback,
+      }),
+    [fallback, location, mode, scenario.id],
+  );
 
   useEffect(() => {
-    if (ready) persistState(state);
-  }, [ready, state]);
+    stateRef.current = state;
+    if (ready && mode === "demo") persistState(state);
+  }, [mode, ready, state]);
 
-  const dispatch = useCallback((action: SimulationAction) => {
-    setState((current) =>
-      simulationReducer(current, {
-        ...action,
-        at: action.at ?? new Date().toISOString(),
-      }),
-    );
-  }, []);
+  useEffect(() => {
+    if (mode !== "connected") return;
+    let active = true;
+    store
+      .load()
+      .then((loaded) => {
+        if (!active || !loaded) return;
+        stateRef.current = loaded;
+        setState(loaded);
+      })
+      .catch((cause) => {
+        if (active) {
+          setError(
+            cause instanceof RunStoreError
+              ? cause.message
+              : "Could not load the connected run.",
+          );
+        }
+      })
+      .finally(() => {
+        if (active) setConnectedReady(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, [mode, store]);
+
+  const dispatch = useCallback(
+    (action: SimulationAction) => {
+      setError(null);
+      setPending(true);
+      dispatchQueue.current = dispatchQueue.current
+        .then(async () => {
+          const next = await store.execute(stateRef.current, action);
+          stateRef.current = next;
+          setState(next);
+        })
+        .catch((cause) => {
+          setError(
+            cause instanceof RunStoreError
+              ? cause.message
+              : "The run could not be updated.",
+          );
+        })
+        .finally(() => setPending(false));
+    },
+    [store],
+  );
 
   const resetRun = useCallback(() => {
-    setState(resetSimulation(location));
-  }, [location]);
+    setError(null);
+    setPending(true);
+    dispatchQueue.current = dispatchQueue.current
+      .then(async () => {
+        const next = await store.reset();
+        stateRef.current = next;
+        setState(next);
+      })
+      .catch((cause) => {
+        setError(
+          cause instanceof RunStoreError
+            ? cause.message
+            : "The run could not be reset.",
+        );
+      })
+      .finally(() => setPending(false));
+  }, [store]);
 
   const value = useMemo(
-    () => ({ ready, state, dispatch, resetRun }),
-    [ready, state, dispatch, resetRun],
+    () => ({ ready, state, dispatch, resetRun, pending, error, mode }),
+    [dispatch, error, mode, pending, ready, resetRun, state],
   );
 
   return (

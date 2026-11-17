@@ -26,6 +26,7 @@ import {
   SimulationProvider,
   useSimulation,
 } from "@/lib/simulation/run-context";
+import type { RunMode } from "@/lib/simulation/run-store";
 import { cn, Badge } from "../ui";
 import { TaskSidebar } from "./task-sidebar";
 import { ToolPanel } from "./tool-panels";
@@ -61,12 +62,14 @@ function WorkspaceContent({
   course,
   module,
   scenario,
+  mode,
 }: {
   course: Course;
   module: Module;
   scenario: Scenario;
+  mode: RunMode;
 }) {
-  const { ready, state } = useSimulation();
+  const { ready, state, pending, error } = useSimulation();
   const [activeTool, setActiveTool] = useState<ToolId>(
     scenario.enabledTools[0],
   );
@@ -104,7 +107,13 @@ function WorkspaceContent({
           </div>
           <div className="hidden items-center gap-2 rounded-xl bg-[var(--green-50)] px-3 py-2 text-[10px] font-bold text-[var(--green-800)] md:flex">
             <Save className="size-3.5" />
-            {state.phase === "complete" ? "已保存到本机" : "自动保存到本机"}
+            {pending
+              ? "正在保存"
+              : mode === "connected"
+                ? "已同步到服务端"
+                : state.phase === "complete"
+                  ? "已保存到本机"
+                  : "自动保存到本机"}
           </div>
           <div className="hidden min-w-32 sm:block">
             <div className="flex justify-between text-[9px] font-bold text-[var(--muted)]">
@@ -120,7 +129,7 @@ function WorkspaceContent({
           </div>
           <Badge tone="lime" className="hidden xl:inline-flex">
             <CircleDot className="size-3" />
-            DEMO
+            {mode === "connected" ? "CONNECTED" : "DEMO"}
           </Badge>
         </div>
         <div className="flex border-t border-[var(--line)] p-2 lg:hidden">
@@ -150,6 +159,17 @@ function WorkspaceContent({
           </div>
         </div>
       </header>
+
+      {error ? (
+        <div className="border-b border-[#e8d29d] bg-[#fff7df] px-4 py-3 text-center text-xs font-semibold text-[#72571d]">
+          {error}{" "}
+          {error.includes("Sign in") ? (
+            <Link href="/login" className="underline">
+              前往登录
+            </Link>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="mx-auto max-w-[1600px]">
         <div className="grid min-h-[calc(100vh-5rem)] lg:grid-cols-[220px_minmax(0,1fr)_310px]">
@@ -257,18 +277,26 @@ export function WorkspaceShell({
   course,
   module,
   scenario,
+  mode = "demo",
 }: {
   course: Course;
   module: Module;
   scenario: Scenario;
+  mode?: RunMode;
 }) {
   return (
     <SimulationProvider
       courseId={course.id}
       moduleId={module.id}
       scenario={scenario}
+      mode={mode}
     >
-      <WorkspaceContent course={course} module={module} scenario={scenario} />
+      <WorkspaceContent
+        course={course}
+        module={module}
+        scenario={scenario}
+        mode={mode}
+      />
     </SimulationProvider>
   );
 }

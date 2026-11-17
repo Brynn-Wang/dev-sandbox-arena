@@ -9,14 +9,16 @@ import {
   Layers3,
 } from "lucide-react";
 import { useMemo } from "react";
-import type { Course } from "@/content/types";
-import { workspaceHref } from "@/content/courses";
+import {
+  workspaceHref,
+  type PublicCourse,
+} from "@/content/public-catalog";
 import { text, uiCopy } from "@/content/ui";
 import { usePreferencesSnapshot } from "@/lib/use-preferences";
 import { useRunRecords } from "@/lib/simulation/use-run-records";
 import { Badge, Card, ProgressBar } from "./ui";
 
-export function CourseCatalog({ courses }: { courses: Course[] }) {
+export function CourseCatalog({ courses }: { courses: PublicCourse[] }) {
   const records = useRunRecords();
   const locale = usePreferencesSnapshot().language;
 

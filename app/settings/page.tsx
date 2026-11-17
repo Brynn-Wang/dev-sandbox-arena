@@ -10,6 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default function SettingsPage() {
+  const connectedMode = process.env.RUN_MODE === "connected";
   return (
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
@@ -20,10 +21,10 @@ export default function SettingsPage() {
         </Badge>
         <h1 className="mt-5 text-4xl font-black tracking-[-0.045em]">设置</h1>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">
-          首版偏好保存在当前浏览器。语言切换先覆盖主导航与设置界面；课程标题、描述保留双语字段，详细工具文案仍以中文课堂内容为主。
+          偏好保存在当前浏览器；学习运行是否跨设备同步由部署环境的数据模式决定。
         </p>
         <div className="mt-9">
-          <SettingsForm />
+          <SettingsForm connectedMode={connectedMode} />
         </div>
       </main>
       <SiteFooter />

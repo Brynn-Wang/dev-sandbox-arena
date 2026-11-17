@@ -467,7 +467,7 @@ function FilesTool({ scenario }: { scenario: Scenario }) {
 }
 
 function AssistantTool() {
-  const { state, dispatch } = useSimulation();
+  const { state, dispatch, mode: runMode } = useSimulation();
   const [prompt, setPrompt] = useState(
     "请修复新笔记错误显示删除按钮的问题，并说明需要补充的测试。",
   );
@@ -481,7 +481,12 @@ function AssistantTool() {
       icon={<Bot className="size-5" />}
       title="AI 助手"
       description="Ask、Plan、Build 模式共用同一消息记录；Demo 响应是确定性的。"
-      action={<Badge tone="lime"><Sparkles className="size-3" />DEMO ADAPTER</Badge>}
+      action={
+        <Badge tone="lime">
+          <Sparkles className="size-3" />
+          {runMode === "connected" ? "STRUCTURED EVALUATOR" : "DEMO ADAPTER"}
+        </Badge>
+      }
     >
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_14rem]">
         <div className="flex min-h-[27rem] flex-col overflow-hidden rounded-2xl border border-[var(--line)] bg-white">
@@ -502,6 +507,12 @@ function AssistantTool() {
                   {message.role === "user" ? "YOU" : message.role.toUpperCase()} · {message.mode}
                 </p>
                 <p className="whitespace-pre-wrap">{message.content}</p>
+                {message.evaluation ? (
+                  <p className="mt-2 font-mono text-[8px] uppercase tracking-[0.08em] opacity-60">
+                    GRADER: {message.evaluation.grader} · EVIDENCE:{" "}
+                    {message.evaluation.evidenceQuotes.length}
+                  </p>
+                ) : null}
               </div>
             ))}
           </div>
