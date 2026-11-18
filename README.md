@@ -2,6 +2,28 @@
 
 AI 辅助软件开发互动学习平台。项目同时支持免登录 Demo 与 Supabase Connected 模式；核心场景已具备服务端权威状态、跨设备恢复和结构化 AI 评估。
 
+## 在线部署
+
+- Production: [https://dev-sandbox-arena.vercel.app/](https://dev-sandbox-arena.vercel.app/)
+- Runtime mode: `connected`
+- Supabase Auth / PostgreSQL: configured
+- Server-side model adapter: configured
+
+线上 `/api/health` 已验证返回：
+
+```json
+{
+  "status": "ok",
+  "mode": "connected",
+  "dependencies": {
+    "supabase": "configured",
+    "model": "configured"
+  }
+}
+```
+
+仓库中的环境变量模板默认使用 `RUN_MODE=demo`，方便无账号体验；Production 环境通过 Vercel Environment Variables 启用 Connected 模式。
+
 ## 技术栈
 
 - Next.js 16.4.6，App Router
@@ -9,6 +31,7 @@ AI 辅助软件开发互动学习平台。项目同时支持免登录 Demo 与 S
 - TypeScript
 - Tailwind CSS 4.3.3
 - Supabase Auth / PostgreSQL
+- Vercel Production hosting
 - Zod 4.6.7
 - Vitest 4.0.18
 - Playwright 1.65.1
@@ -85,6 +108,7 @@ npm run test:e2e
 
 - Demo 模式把活跃运行、运行历史和偏好保存在当前浏览器 `localStorage`。
 - Connected 模式通过 Supabase Auth 验证用户，由服务端 API 执行 Action，Run 和 Event 写入 PostgreSQL。
+- Production 已启用 Connected 模式；线上登录页提供 GitHub 和邮箱 Magic Link 登录。
 - 服务端状态使用 revision 乐观锁，防止多标签页静默覆盖。
 - 学生通过 RLS 只能读取自己的运行和事件；浏览器不能直接写入权威运行状态。
 - 工作台按钮只发送 Action；所有状态与事件仍由统一 reducer 修改。
@@ -96,6 +120,7 @@ npm run test:e2e
 - 九个共享工具：任务、消息、项目说明、文件与差异、AI 助手、测试、版本、发布、摘要。
 - 完整状态化演示流程、错误反馈、事件日志与刷新恢复。
 - Demo / Connected 统一 RunStore、Supabase 登录、服务端运行与事件记录。
+- Vercel Production 部署、Supabase Auth 与线上模型配置。
 - 公共 Catalog 与完整 Scenario 分离，Connected 页面不接收隐藏补丁和修复答案。
 - 结构化 AI 评估、证据引用、grader 降级与报告记录。
 - 小屏幕工具／任务标签切换。
@@ -105,22 +130,33 @@ npm run test:e2e
 - Playwright Demo 流程：完成场景、刷新恢复、查看学习报告。
 - 语言偏好已接通主导航与设置；课程标题和描述使用双语配置，详细工具课堂文案仍以中文为主。
 
-## 模拟实现
+## 模拟与真实边界
 
-- 消息、文件、代码差异、测试结果、分支、提交、PR、部署和 AI 回复均为教学模拟。
-- “发布”不会调用 Vercel，只写入当前浏览器状态。
+- 消息、文件、代码差异、测试结果、分支、提交、PR 和部署界面均为教学模拟。
+- “发布”不会调用 Vercel，只更新当前运行状态；Connected 模式会持久化到 Supabase。
+- Demo 模式使用确定性 AI Adapter；Connected 模式可通过服务端 OpenAI-compatible Adapter 调用真实模型。
+- 模型输出只作为经过校验的结构化判断，失败时回退到关键词评估，不执行真实系统命令。
 - 文档摘要使用预置演示数据，不是真实上传、PDF 提取或 LLM 生成。
-- 模拟终端只呈现结果，不接受并执行真实系统命令。
 - 报告中的评价是明确标注的占位内容，不是 AI 评分。
 
-## 待接入
+## 待接入与后续升级
 
-- 班级、任务分配与教师角色。
-- 运行历史的长期归档与教师报告。
+### 教学与数据
+
+- 班级、任务分配、教师角色和教师端学生进度页面。
+- 多次运行的不可变历史和长期归档；Connected 当前每个用户、每个场景保留一条运行。
+- 正式题目、剧情、评分规则、提示分级和教师反馈。
+- 班级管理、排行榜、课程版本管理以及课程编辑、审核和发布流。
+
+### 文档工作流
+
 - Supabase Storage 文件上传、PDF/TXT 提取与对象权限。
 - 摘要任务的服务端队列、自定义指令执行和异常路径处理。
-- 正式题目、剧情、评分规则、提示分级和教师反馈。
-- 班级管理、排行榜、课程版本管理和内容编辑发布流。
-- Connected E2E 的真实 Staging Supabase 凭据与部署烟测。
+
+### 发布工程
+
+- 与 Production 隔离的 Staging Supabase 项目和 Preview 环境变量。
+- Connected E2E 的 Staging 会话、真实 OAuth 验收与部署烟测。
+- 数据库迁移自动化、回滚流程、监控告警和备份恢复验证。
 
 更多文件职责与扩展方法见 [ARCHITECTURE.md](./ARCHITECTURE.md)。
